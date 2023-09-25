@@ -1,4 +1,3 @@
 # Machine Learning
 
-Documenting my progress learning ML.
-
+Documenting my progress learning ML
