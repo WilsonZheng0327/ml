@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-torch.manual_seed(1337)
+# torch.manual_seed(1337)
 
 # hyperparameters
 batch_size = 64 # how many independent sequences will we process in parallel?
@@ -10,6 +10,7 @@ max_iters = 5000
 eval_interval = 500
 learning_rate = 3e-4
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print("cude:", torch.cuda.is_available())
 eval_iters = 200
 n_embd = 384
 n_head = 6
@@ -20,6 +21,8 @@ dropout = 0.2   # drop 20% intermediate neurons
 # wget https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt
 with open('input.txt', 'r', encoding='utf-8') as f:
     text = f.read()
+
+print("Reading input file...")
 
 # here are all the unique characters that occur in this text
 chars = sorted(list(set(text)))
@@ -35,6 +38,8 @@ data = torch.tensor(encode(text), dtype=torch.long)
 n = int(0.9*len(data)) # first 90% will be train, rest val
 train_data = data[:n]
 val_data = data[n:]
+
+print("Creating functions...")
 
 # data loading
 def get_batch(split):
@@ -59,6 +64,8 @@ def estimate_loss():
         out[split] = losses.mean()
     model.train()
     return out
+
+print("Creating classes...")
 
 class Head(nn.Module):
 
@@ -123,6 +130,8 @@ class Block(nn.Module):
         x = x + self.sa(self.ln1(x))
         x = x + self.ffwd(self.ln2(x))
         return x
+
+print("Creating actual model...")
 
 class GPTLanguageModel(nn.Module):
 
@@ -191,33 +200,35 @@ class GPTLanguageModel(nn.Module):
 
         return idx
 
+print("Creating model instance...")
+
 model = GPTLanguageModel()
 m = model.to(device)
 
 # PyTorch optimizer
+print("Creating optimizer")
 optimizer = torch.optim.AdamW(m.parameters(), lr=learning_rate)
 
 batch_size = 32
 
-# # training model
-# for iter in range(5000):
-#     # print(iter)
+# training model
+for iter in range(5000):
+    print(iter)
 
-#     xb, yb = get_batch('train')
+    xb, yb = get_batch('train')
 
-#     if iter % eval_interval == 0 or iter == max_iters - 1:
-#         losses = estimate_loss()
-#         print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+    if iter % eval_interval == 0 or iter == max_iters - 1:
+        losses = estimate_loss()
+        print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
 
-#     logits, loss = model(xb, yb)
-#     # reset gradients
-#     optimizer.zero_grad(set_to_none=True)
-#     # back propagation
-#     loss.backward()
-#     optimizer.step()
+    logits, loss = model(xb, yb)
+    # reset gradients
+    optimizer.zero_grad(set_to_none=True)
+    # back propagation
+    loss.backward()
+    optimizer.step()
 
 
-# initial_context = torch.zeros((1, 1), dtype=torch.long, device=device)
-# print(decode(model.generate(initial_context, max_new_tokens=500)[0].tolist()))
+initial_context = torch.zeros((1, 1), dtype=torch.long, device=device)
+print(decode(model.generate(initial_context, max_new_tokens=500)[0].tolist()))
 
-print(torch.cuda.is_available())
